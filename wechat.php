@@ -1,6 +1,4 @@
-<?php
-
-namespace wechat;
+<?php namespace yfwz100\wechat;
 
 class Exception extends \Exception {}
 
