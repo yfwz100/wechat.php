@@ -105,3 +105,51 @@ class Reply {
 
 }
 
+class Router {
+  private static $router;
+
+  private $textHandlers;
+
+  function __construct() {
+    $this->textHandlers = array();
+  }
+
+  function match($regexp, $callback=NULL) {
+    if (!$callback) {
+      $this->textHandlers['/.*/'] = $regexp;
+    } else {
+      if ($regexp[0] != '/') {
+        $regexp = "/$regexp/";
+      }
+      $this->textHandlers[$regexp] = $callback;
+    }
+  }
+
+  protected function processText($postObj) {
+    $content = $postObj->Content;
+    foreach($this->textHandlers as $regexp => $handler) {
+      if (preg_match($regexp, $content, $matches)) {
+        if (!$handler($matches)) {
+          break;
+        }
+      }
+    }
+  }
+
+  function __call($method, $args) {
+  }
+
+  function run() {
+    $postObj = Request::get();
+    $method = sprintf("process%s", ucwords($postObj->MsgType));
+    $this->{$method}($postObj);
+  }
+
+  static function get() {
+    if (!static::$router) {
+      static::$router = new Router();
+    }
+    return static::$router;
+  }
+}
+
