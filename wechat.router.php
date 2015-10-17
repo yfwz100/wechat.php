@@ -24,7 +24,7 @@ class TextHandler {
   }
 
   function __invoke($postObj) {
-    $content = $postObj->Content;
+    $content = $this->textToProcess($postObj);
     foreach ($this->handlers as $regexp => $callback) {
       if (preg_match($regexp, $content, $matches)) {
         if (!$callback($matches)) {
@@ -54,7 +54,10 @@ class EventHandler extends \yfwz100\wechat\Router {
 
   function __invoke($postObj) {
     $eventType = strtolower($postObj->Event);
-    $this->{$eventType}($postObj);
+    if (!empty($eventType)) {
+      $handle = $this->{$eventType};
+      $handle($postObj);
+    }
   }
 
 }

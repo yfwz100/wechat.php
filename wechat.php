@@ -1,6 +1,6 @@
 <?php namespace yfwz100\wechat;
 
-require './wechat.router.php';
+require dirname(__FILE__) . '/wechat.router.php';
 
 class Exception extends \Exception {}
 
@@ -137,7 +137,10 @@ class Router {
   function __invoke() {
     $postObj = Request::get();
     $msgType = strtolower($postObj->MsgType);
-    $this->{$msgType}($postObj);
+    if (!empty($msgType)) {
+      $handle = $this->{$msgType};
+      $handle($postObj);
+    }
   }
 
   static function get() {
