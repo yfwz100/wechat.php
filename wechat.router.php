@@ -19,6 +19,10 @@ class TextHandler {
     }
   }
 
+  protected function textToProcess($postObj) {
+    return $postObj->Content;
+  }
+
   function __invoke($postObj) {
     $content = $postObj->Content;
     foreach ($this->handlers as $regexp => $callback) {
@@ -32,17 +36,25 @@ class TextHandler {
 
 }
 
+class ClickHandler extends TextHandler {
+
+  protected function textToProcess($postObj) {
+    return $postObj->EventKey;
+  }
+
+}
+
 class EventHandler extends \yfwz100\wechat\Router {
 
   function __construct() {
     $this->handlers = array(
-      click=> new TextHandler()
+      click=> new ClickHandler()
     );
   }
 
   function __invoke($postObj) {
     $eventType = strtolower($postObj->Event);
-    $this->{$msgType}($postObj);
+    $this->{$eventType}($postObj);
   }
 
 }
