@@ -145,7 +145,7 @@ class Router {
     $msgType = strtolower($postObj->MsgType);
     if (!empty($msgType)) {
       $handle = $this->{$msgType};
-      $handle($postObj);
+      $handle();
     }
   }
 

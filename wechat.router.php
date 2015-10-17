@@ -19,12 +19,12 @@ class TextHandler {
     }
   }
 
-  protected function textToProcess($postObj) {
-    return $postObj->Content;
+  protected function textToProcess() {
+    return \yfwz100\wechat\Request::get()->Content;
   }
 
-  function __invoke($postObj) {
-    $content = $this->textToProcess($postObj);
+  function __invoke() {
+    $content = $this->textToProcess();
     foreach ($this->handlers as $regexp => $callback) {
       if (preg_match($regexp, $content, $matches)) {
         if (!$callback($matches)) {
@@ -38,8 +38,8 @@ class TextHandler {
 
 class ClickHandler extends TextHandler {
 
-  protected function textToProcess($postObj) {
-    return $postObj->EventKey;
+  protected function textToProcess() {
+    return \yfwz100\wechat\Request::get()->EventKey;
   }
 
 }
@@ -52,11 +52,11 @@ class EventHandler extends \yfwz100\wechat\Router {
     );
   }
 
-  function __invoke($postObj) {
-    $eventType = strtolower($postObj->Event);
+  function __invoke() {
+    $eventType = strtolower(\yfwz100\wechat\Request::get()->Event);
     if (!empty($eventType)) {
       $handle = $this->{$eventType};
-      $handle($postObj);
+      $handle();
     }
   }
 
