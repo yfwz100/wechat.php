@@ -88,6 +88,42 @@ class Reply {
     return new Reply($post);
   }
 
+  static function image($mediaId) {
+    $post = new XMLElement('<xml/>');
+    $post->addChild('MsgType', 'image');
+    $post->addChild('Image')->addChildCData('MediaId', $mediaId);
+    return new Reply($post);
+  }
+
+  static function voice($mediaId) {
+    $post = new XMLElement('<xml/>');
+    $post->addChild('MsgType', 'voice');
+    $post->addChild('Voice')->addChildCData('MediaId', $mediaId);
+    return new Reply($post);
+  }
+
+  static function video($mediaId, $title, $description) {
+    $post = new XMLElement('<xml/>');
+    $post->addChild('MsgType', 'video');
+    $videoInfo = $post->addChild('Video');
+    $videoInfo->addChildCData('MediaId', $mediaId);
+    $videoInfo->addChildCData('Title', $title);
+    $videoInfo->addChildCData('Description', $description);
+    return new Reply($post);
+  }
+
+  static function music($title, $description, $musicUrl, $hqMusicUrl, $mediaId) {
+    $post = new XMLElement('<xml/>');
+    $post->addChild('MsgType', 'music');
+    $musicInfo = $post->addChild('Music');
+    $musicInfo->addChildCData('Title', $title);
+    $musicInfo->addChildCData('Description', $description);
+    $musicInfo->addChildCData('MusicUrl', $musicUrl);
+    $musicInfo->addChildCData('HQMusicUrl', $hqMusicUrl);
+    $musicInfo->addChildCData('ThumbMediaId', $mediaId);
+    return new Reply($post);
+  }
+
   static function news($news) {
     $post = new XMLElement('<xml/>');
     $post->addChild('MsgType', 'news');
