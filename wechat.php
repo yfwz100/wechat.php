@@ -103,6 +103,12 @@ class Reply {
     return new Reply($post);
   }
 
+  static function transfer() {
+    $post = new XMLElement('<xml/>');
+    $post->addChild('MsgType', 'transfer_customer_service');
+    return new Reply($post);
+  }
+
   static function ok() {
     return "success";
   }
