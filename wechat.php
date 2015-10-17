@@ -1,5 +1,7 @@
 <?php namespace yfwz100\wechat;
 
+require './wechat.router.php';
+
 class Exception extends \Exception {}
 
 class InvalidException extends Exception {}
@@ -22,11 +24,13 @@ function init($token) {
 }
 
 class XMLElement extends \SimpleXMLElement {
+
   private function addCData($text) {
     $node = dom_import_simplexml($this);
     $no =  $node->ownerDocument;
     $node->appendChild($no->createCDATASection($text));
   }
+
   function addChildCData($name, $text) {
     $child = $this->addChild($name);
     $child->addCData($text);
@@ -76,7 +80,7 @@ class Reply {
     $this->part->addChild('CreateTime', time());
     return $this->part->asXML();
   }
-  
+
   static function text($content) {
     $post = new XMLElement('<xml/>');
     $post->addChild('MsgType', 'text');
@@ -108,41 +112,32 @@ class Reply {
 class Router {
   private static $router;
 
-  private $textHandlers;
+  protected $handlers;
+  private $userHandlers;
 
-  function __construct() {
-    $this->textHandlers = array();
+  protected function __construct() {
+    $this->handlers = array(
+      text=> new router\TextHandler(),
+      event=> new router\EventHandler()
+    );
   }
 
-  function match($regexp, $callback=NULL) {
-    if (!$callback) {
-      $this->textHandlers['/.*/'] = $regexp;
-    } else {
-      if ($regexp[0] != '/') {
-        $regexp = "/$regexp/";
-      }
-      $this->textHandlers[$regexp] = $callback;
+  function on($msgType, $handler) {
+    $this->userHandlers[$msgType] = $handler;
+  }
+
+  function __get($name) {
+    if (array_key_exists($name, $this->handlers)) {
+      return $this->handlers[$name];
+    } else if (array_key_exists($name, $this->userHandlers)) {
+      return $this->userHandlers[$name];
     }
   }
 
-  protected function processText($postObj) {
-    $content = $postObj->Content;
-    foreach($this->textHandlers as $regexp => $handler) {
-      if (preg_match($regexp, $content, $matches)) {
-        if (!$handler($matches)) {
-          break;
-        }
-      }
-    }
-  }
-
-  function __call($method, $args) {
-  }
-
-  function run() {
+  function __invoke() {
     $postObj = Request::get();
-    $method = sprintf("process%s", ucwords($postObj->MsgType));
-    $this->{$method}($postObj);
+    $msgType = strtolower($postObj->MsgType);
+    $this->{$msgType}($postObj);
   }
 
   static function get() {
@@ -152,4 +147,3 @@ class Router {
     return static::$router;
   }
 }
-
