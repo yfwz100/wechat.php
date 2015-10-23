@@ -1,26 +1,30 @@
 <?php namespace yfwz100\wechat;
 
-require dirname(__FILE__) . '/wechat.router.php';
+require_once dirname(__FILE__) . '/wechat.router.php';
 
 class Exception extends \Exception {}
 
 class InvalidException extends Exception {}
 
-function init($token) {
-  $signature = $_GET['signature'];
-  $timestamp = $_GET['timestamp'];
-  $nonce = $_GET['nonce'];
-  $tmpArr = array($token, $timestamp, $nonce);
-  sort($tmpArr, SORT_STRING);
-  $tmpStr = sha1(implode($tmpArr));
-  if ($tmpStr == $signature) {
-    if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-      echo $_GET['echostr'];
-      exit();
+class Init {
+
+  static function withToken($token) {
+    $signature = $_GET['signature'];
+    $timestamp = $_GET['timestamp'];
+    $nonce = $_GET['nonce'];
+    $tmpArr = array($token, $timestamp, $nonce);
+    sort($tmpArr, SORT_STRING);
+    $tmpStr = sha1(implode($tmpArr));
+    if ($tmpStr == $signature) {
+      if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+        echo $_GET['echostr'];
+        exit();
+      }
+    } else {
+      throw new InvalidException();
     }
-  } else {
-    throw new InvalidException();
   }
+
 }
 
 class XMLElement extends \SimpleXMLElement {
