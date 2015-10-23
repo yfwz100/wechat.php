@@ -41,7 +41,7 @@ $router = wechat\Router::get();
 
 // Subscription event.
 $router->event->on('subscribe', function () {
-    echo wechat\Reply::text("欢迎关注施阳作，请注册以便使用更多服务。");
+    echo wechat\Reply::text("Welcome subscribing~");
 });
 
 // Keyword reply.
