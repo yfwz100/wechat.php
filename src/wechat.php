@@ -159,8 +159,8 @@ class Router {
 
   protected function __construct() {
     $this->handlers = array(
-      text=> new router\TextHandler(),
-      event=> new router\EventHandler()
+      'text'=> new router\TextHandler(),
+      'event'=> new router\EventHandler()
     );
   }
 

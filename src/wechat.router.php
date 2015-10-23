@@ -48,7 +48,7 @@ class EventHandler extends \yfwz100\wechat\Router {
 
   function __construct() {
     $this->handlers = array(
-      click=> new ClickHandler()
+      'click'=> new ClickHandler()
     );
   }
 
