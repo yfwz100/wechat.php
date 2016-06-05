@@ -1,6 +1,7 @@
 <?php namespace yfwz100\wechat;
 
 require_once dirname(__FILE__) . '/wechat.router.php';
+require_once dirname(__FILE__) . '/wechat.crypt.php';
 
 class Exception extends \Exception {}
 
@@ -17,9 +18,30 @@ class Init {
     $tmpStr = sha1(implode($tmpArr));
     if ($tmpStr == $signature) {
       if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-        echo $_GET['echostr'];
-        exit();
+        exit($_GET['echostr']);
       }
+    } else {
+      throw new InvalidException();
+    }
+  }
+
+  static function withCorp($corpId, $token, $encodingKey) {
+    $msg_signature = $_GET['msg_signature'];
+    $timestamp = $_GET['timestamp'];
+    $nonce = $_GET['nonce'];
+    $echoStr = $_GET['echostr'];
+
+    $tmpArr = array($echoStr, $token, $timestamp, $nonce);
+    sort($tmpArr, SORT_STRING);
+    $signature = sha1(implode($tmpArr));
+    if ($signature != $msg_signature) {
+      exit();
+    }
+
+    $result = Prp::init($encodingKey, $corpId)->decrypt($echoStr);
+
+    if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+      exit($result);
     } else {
       throw new InvalidException();
     }
