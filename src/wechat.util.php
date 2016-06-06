@@ -5,7 +5,7 @@ class PrpCryptException extends InvalidException {}
 class EncryptAESException extends PrpCryptException {}
 class DecryptAESException extends PrpCryptException {}
 class IllegalBufferException extends PrpCryptException {}
-class ValidateCropIdException extends PrpCryptException {}
+class ValidateCorpIdException extends PrpCryptException {}
 
 /**
  * 字符串填充算法。
@@ -79,7 +79,7 @@ class Prp {
     try {
       //获得16位随机字符串，填充到明文之前
       $random = $this->getRandomStr();
-      $text = $random . pack("N", strlen($text)) . $text . $this->corpid;
+      $text = $random . pack("N", strlen($text)) . $text . $this->corpId;
       // 网络字节序
       $size = \mcrypt_get_block_size(MCRYPT_RIJNDAEL_128, MCRYPT_MODE_CBC);
       $module = \mcrypt_module_open(MCRYPT_RIJNDAEL_128, '', MCRYPT_MODE_CBC, '');
@@ -137,7 +137,7 @@ class Prp {
     }
 
     if ($from_corpid != $this->corpId)
-      throw new ValidateCorpidException();
+      throw new ValidateCorpIdException();
 
     return $xml_content;
   }
@@ -157,6 +157,13 @@ class Prp {
     return $str;
   }
 
+}
+
+function wxSHA1($token, $timestamp, $nonce, $encrypt_msg) {
+  $array = array($encrypt_msg, $token, $timestamp, $nonce);
+  sort($array, SORT_STRING);
+  $str = implode($array);
+  return sha1($str);
 }
 
 class XMLElement extends \SimpleXMLElement {

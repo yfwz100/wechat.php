@@ -1,7 +1,6 @@
 <?php namespace yfwz100\wechat;
 
 require_once dirname(__FILE__) . '/wechat.router.php';
-require_once dirname(__FILE__) . '/wechat.crypt.php';
 require_once dirname(__FILE__) . '/wechat.util.php';
 
 class Exception extends \Exception {}
@@ -9,6 +8,11 @@ class Exception extends \Exception {}
 class InvalidException extends Exception {}
 
 abstract class Init {
+
+  static $wxAppId;
+  static $wxToken;
+  static $wxEnKey;
+  static $wxSignature;
 
   static function withToken($token) {
     if ($_SERVER['REQUEST_METHOD'] == 'GET') {
@@ -35,10 +39,8 @@ abstract class Init {
       $timestamp = $_GET['timestamp'];
       $nonce = $_GET['nonce'];
       $echoStr = $_GET['echostr'];
-
-      $tmpArr = array($echoStr, $token, $timestamp, $nonce);
-      sort($tmpArr, SORT_STRING);
-      $signature = sha1(implode($tmpArr));
+      
+      $signature = wxSHA1($token, $timestamp, $nonce, $echoStr);
       if ($signature != $msg_signature) {
         exit();
       }
@@ -46,10 +48,13 @@ abstract class Init {
       $result = Prp::init($encodingKey, $corpId)->decrypt($echoStr);
 
       exit($result);
-    } else {
-      throw new InvalidException();
     }
-    require_once dirname(__FILE__) . '/wechat.plain.php';
+
+    static::$wxAppId = $corpId;
+    static::$wxToken = $token;
+    static::$wxEnKey = $encodingKey;
+
+    require_once dirname(__FILE__) . '/wechat.crypt.php';
   }
 
 }

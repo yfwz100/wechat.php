@@ -1,5 +1,8 @@
 <?php namespace yfwz100\wechat\internal;
 
+/**
+ * Plain XML-based Request implementation.
+ */
 class Request extends \yfwz100\wechat\Request {
 
   public function __construct() {
@@ -7,13 +10,16 @@ class Request extends \yfwz100\wechat\Request {
     if (!empty($postStr)) {
       $this->postObj = simplexml_load_string($postStr);
       if (!$this->postObj) {
-        throw new InvalidException();
+        throw new \yfwz100\wechat\InvalidException();
       }
     }
   }
 
 }
 
+/**
+ * Plain XML-based reply implementation.
+ */
 class Reply extends \yfwz100\wechat\Reply {
 
   private $part;
