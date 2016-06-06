@@ -2,82 +2,62 @@
 
 require_once dirname(__FILE__) . '/wechat.router.php';
 require_once dirname(__FILE__) . '/wechat.crypt.php';
+require_once dirname(__FILE__) . '/wechat.util.php';
 
 class Exception extends \Exception {}
 
 class InvalidException extends Exception {}
 
-class Init {
+abstract class Init {
 
   static function withToken($token) {
-    $signature = $_GET['signature'];
-    $timestamp = $_GET['timestamp'];
-    $nonce = $_GET['nonce'];
-    $tmpArr = array($token, $timestamp, $nonce);
-    sort($tmpArr, SORT_STRING);
-    $tmpStr = sha1(implode($tmpArr));
-    if ($tmpStr == $signature) {
-      if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+    if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+      $signature = $_GET['signature'];
+      $timestamp = $_GET['timestamp'];
+      $nonce = $_GET['nonce'];
+
+      $tmpArr = array($token, $timestamp, $nonce);
+      sort($tmpArr, SORT_STRING);
+      $tmpStr = sha1(implode($tmpArr));
+
+      if ($tmpStr == $signature) {
         exit($_GET['echostr']);
+      } else {
+        throw new InvalidException();
       }
-    } else {
-      throw new InvalidException();
     }
+    require_once dirname(__FILE__) . '/wechat.plain.php';
   }
 
   static function withCorp($corpId, $token, $encodingKey) {
-    $msg_signature = $_GET['msg_signature'];
-    $timestamp = $_GET['timestamp'];
-    $nonce = $_GET['nonce'];
-    $echoStr = $_GET['echostr'];
-
-    $tmpArr = array($echoStr, $token, $timestamp, $nonce);
-    sort($tmpArr, SORT_STRING);
-    $signature = sha1(implode($tmpArr));
-    if ($signature != $msg_signature) {
-      exit();
-    }
-
-    $result = Prp::init($encodingKey, $corpId)->decrypt($echoStr);
-
     if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+      $msg_signature = $_GET['msg_signature'];
+      $timestamp = $_GET['timestamp'];
+      $nonce = $_GET['nonce'];
+      $echoStr = $_GET['echostr'];
+
+      $tmpArr = array($echoStr, $token, $timestamp, $nonce);
+      sort($tmpArr, SORT_STRING);
+      $signature = sha1(implode($tmpArr));
+      if ($signature != $msg_signature) {
+        exit();
+      }
+
+      $result = Prp::init($encodingKey, $corpId)->decrypt($echoStr);
+
       exit($result);
     } else {
       throw new InvalidException();
     }
+    require_once dirname(__FILE__) . '/wechat.plain.php';
   }
 
 }
 
-class XMLElement extends \SimpleXMLElement {
+abstract class Request {
+  protected static $request;
 
-  private function addCData($text) {
-    $node = dom_import_simplexml($this);
-    $no =  $node->ownerDocument;
-    $node->appendChild($no->createCDATASection($text));
-  }
-
-  function addChildCData($name, $text) {
-    $child = $this->addChild($name);
-    $child->addCData($text);
-    return $child;
-  }
-}
-
-class Request {
-  private static $request;
-
-  private $postObj;
-
-  function __construct() {
-    $postStr = file_get_contents('php://input');
-    if (!empty($postStr)) {
-      $this->postObj = simplexml_load_string($postStr);
-      if (!$this->postObj) {
-        throw new InvalidException();
-      }
-    }
-  }
+  protected $postObj;
 
   function __get($key) {
     return $this->postObj->{$key};
@@ -85,47 +65,33 @@ class Request {
 
   static function get() {
     if (!static::$request) {
-      static::$request = new Request();
+      static::$request = new internal\Request();
     }
     return static::$request;
   }
 }
 
-class Reply {
-
-  private $part;
-
-  protected function __construct($part) {
-    $this->part = $part;
-  }
-
-  function __toString() {
-    $postObj = Request::get();
-    $this->part->addChild('ToUserName', $postObj->FromUserName);
-    $this->part->addChild('FromUserName', $postObj->ToUserName);
-    $this->part->addChild('CreateTime', time());
-    return $this->part->asXML();
-  }
+abstract class Reply {
 
   static function text($content) {
     $post = new XMLElement('<xml/>');
     $post->addChild('MsgType', 'text');
     $post->addChildCData('Content', $content);
-    return new Reply($post);
+    return new internal\Reply($post);
   }
 
   static function image($mediaId) {
     $post = new XMLElement('<xml/>');
     $post->addChild('MsgType', 'image');
     $post->addChild('Image')->addChildCData('MediaId', $mediaId);
-    return new Reply($post);
+    return new internal\Reply($post);
   }
 
   static function voice($mediaId) {
     $post = new XMLElement('<xml/>');
     $post->addChild('MsgType', 'voice');
     $post->addChild('Voice')->addChildCData('MediaId', $mediaId);
-    return new Reply($post);
+    return new internal\Reply($post);
   }
 
   static function video($mediaId, $title, $description) {
@@ -135,7 +101,7 @@ class Reply {
     $videoInfo->addChildCData('MediaId', $mediaId);
     $videoInfo->addChildCData('Title', $title);
     $videoInfo->addChildCData('Description', $description);
-    return new Reply($post);
+    return new internal\Reply($post);
   }
 
   static function music($title, $description, $musicUrl, $hqMusicUrl, $mediaId) {
@@ -147,7 +113,7 @@ class Reply {
     $musicInfo->addChildCData('MusicUrl', $musicUrl);
     $musicInfo->addChildCData('HQMusicUrl', $hqMusicUrl);
     $musicInfo->addChildCData('ThumbMediaId', $mediaId);
-    return new Reply($post);
+    return new internal\Reply($post);
   }
 
   static function news($news) {
@@ -162,13 +128,13 @@ class Reply {
       $it->addChildCData('PicUrl', $item['PicUrl']);
       $it->addChildCData('Url', $item['Url']);
     }
-    return new Reply($post);
+    return new internal\Reply($post);
   }
 
   static function transfer() {
     $post = new XMLElement('<xml/>');
     $post->addChild('MsgType', 'transfer_customer_service');
-    return new Reply($post);
+    return new internal\Reply($post);
   }
 
   static function ok() {
@@ -183,7 +149,7 @@ class Router {
   protected $handlers;
   private $userHandlers;
 
-  protected function __construct() {
+  function __construct() {
     $this->handlers = array(
       'text'=> new router\TextHandler(),
       'event'=> new router\EventHandler()

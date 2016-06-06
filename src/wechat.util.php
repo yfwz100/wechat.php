@@ -159,3 +159,18 @@ class Prp {
 
 }
 
+class XMLElement extends \SimpleXMLElement {
+
+  private function addCData($text) {
+    $node = dom_import_simplexml($this);
+    $no =  $node->ownerDocument;
+    $node->appendChild($no->createCDATASection($text));
+  }
+
+  function addChildCData($name, $text) {
+    $child = $this->addChild($name);
+    $child->addCData($text);
+    return $child;
+  }
+}
+
