@@ -179,6 +179,8 @@ class Router {
     if (!empty($msgType)) {
       $handle = $this->{$msgType};
       $handle();
+    } else {
+      throw new InvalidException();
     }
   }
 
@@ -189,3 +191,4 @@ class Router {
     return static::$router;
   }
 }
+

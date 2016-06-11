@@ -61,3 +61,4 @@ class EventHandler extends \yfwz100\wechat\Router {
   }
 
 }
+
