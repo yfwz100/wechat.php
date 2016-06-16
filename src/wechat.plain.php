@@ -1,40 +1,18 @@
 <?php namespace yfwz100\wechat\internal;
 
-/**
- * Plain XML-based Request implementation.
- */
-class Request extends \yfwz100\wechat\Request {
-
-  public function __construct() {
-    $postStr = file_get_contents('php://input');
-    if (!empty($postStr)) {
-      $this->postObj = simplexml_load_string($postStr);
-      if (!$this->postObj) {
-        throw new \yfwz100\wechat\InvalidException();
-      }
-    }
+function parseRequest($postStr) {
+  $postObj = simplexml_load_string($postStr);
+  if (!$postObj) {
+    throw new \yfwz100\wechat\InvalidException();
   }
-
+  return $postObj;
 }
 
-/**
- * Plain XML-based reply implementation.
- */
-class Reply extends \yfwz100\wechat\Reply {
-
-  private $part;
-
-  function __construct($part) {
-    $this->part = $part;
-  }
-
-  function __toString() {
-    $postObj = Request::get();
-    $this->part->addChild('ToUserName', $postObj->FromUserName);
-    $this->part->addChild('FromUserName', $postObj->ToUserName);
-    $this->part->addChild('CreateTime', time());
-    return $this->part->asXML();
-  }
-
+function formatReply($part) {
+  $postObj = \yfwz100\wechat\Request::get();
+  $part->addChild('ToUserName', $postObj->FromUserName);
+  $part->addChild('FromUserName', $postObj->ToUserName);
+  $part->addChild('CreateTime', time());
+  return $part->asXML();
 }
 

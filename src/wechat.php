@@ -59,10 +59,19 @@ abstract class Init {
 
 }
 
-abstract class Request {
+class Request {
   protected static $request;
 
   protected $postObj;
+
+  protected function __construct() {
+    $postStr = file_get_contents('php://input');
+    if (!empty($postStr)) {
+      $this->postObj = internal\parseRequest($postStr);
+    } else {
+      throw new InvalidException();
+    }
+  }
 
   function __get($key) {
     return $this->postObj->{$key};
@@ -70,33 +79,42 @@ abstract class Request {
 
   static function get() {
     if (!static::$request) {
-      static::$request = new internal\Request();
+      static::$request = new Request();
     }
     return static::$request;
   }
 }
 
-abstract class Reply {
+class Reply {
+  private $part;
+
+  protected function __construct($part) {
+    $this->part = $part;
+  }
+  
+  public function __toString() {
+    return internal\formatReply($this->part);
+  }
 
   static function text($content) {
     $post = new XMLElement('<xml/>');
     $post->addChild('MsgType', 'text');
     $post->addChildCData('Content', $content);
-    return new internal\Reply($post);
+    return new Reply($post);
   }
 
   static function image($mediaId) {
     $post = new XMLElement('<xml/>');
     $post->addChild('MsgType', 'image');
     $post->addChild('Image')->addChildCData('MediaId', $mediaId);
-    return new internal\Reply($post);
+    return new Reply($post);
   }
 
   static function voice($mediaId) {
     $post = new XMLElement('<xml/>');
     $post->addChild('MsgType', 'voice');
     $post->addChild('Voice')->addChildCData('MediaId', $mediaId);
-    return new internal\Reply($post);
+    return new Reply($post);
   }
 
   static function video($mediaId, $title, $description) {
@@ -106,7 +124,7 @@ abstract class Reply {
     $videoInfo->addChildCData('MediaId', $mediaId);
     $videoInfo->addChildCData('Title', $title);
     $videoInfo->addChildCData('Description', $description);
-    return new internal\Reply($post);
+    return new Reply($post);
   }
 
   static function music($title, $description, $musicUrl, $hqMusicUrl, $mediaId) {
@@ -118,7 +136,7 @@ abstract class Reply {
     $musicInfo->addChildCData('MusicUrl', $musicUrl);
     $musicInfo->addChildCData('HQMusicUrl', $hqMusicUrl);
     $musicInfo->addChildCData('ThumbMediaId', $mediaId);
-    return new internal\Reply($post);
+    return new Reply($post);
   }
 
   static function news($news) {
@@ -133,13 +151,13 @@ abstract class Reply {
       $it->addChildCData('PicUrl', $item['PicUrl']);
       $it->addChildCData('Url', $item['Url']);
     }
-    return new internal\Reply($post);
+    return new Reply($post);
   }
 
   static function transfer() {
     $post = new XMLElement('<xml/>');
     $post->addChild('MsgType', 'transfer_customer_service');
-    return new internal\Reply($post);
+    return new Reply($post);
   }
 
   static function ok() {
